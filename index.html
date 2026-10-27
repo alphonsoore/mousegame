@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mouse Game</title>
+<style>
+@font-face{font-family:"GameFont";src:url("./font.otf");font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;-webkit-user-drag:none}
+html{--cur:#9a3b36;--cur-hi:#cf7a72;--cur-mid:#b44f48;--cur-dk:#7a2c28;--cur-ring:#5e2420}
+html,body{height:100%;overflow:hidden;touch-action:none;overscroll-behavior:none;background:#e9dcc0;color:#2a2118;font-family:"GameFont",Roboto,"Segoe UI",Helvetica,Arial,sans-serif}
+button{font-family:inherit}
+img{pointer-events:none;-webkit-user-drag:none}
+#paper{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 45%,rgba(255,248,225,.35) 0%,rgba(255,248,225,0) 55%,rgba(120,85,40,.22) 100%)}
+#app{position:relative;z-index:1;height:100dvh;display:grid;grid-template-rows:auto 1fr minmax(150px,26vh)}
+#app{--tw:min(4.9vw,8.2vh,66px)}
+
+/* top letters */
+#top{display:flex;justify-content:center;align-items:center;gap:calc(var(--tw)*.35);padding:12px 12px 8px}
+#letters{display:grid;grid-template-columns:repeat(14,var(--tw));gap:calc(var(--tw)*.1)}
+.tc{height:calc(var(--tw)*1.15);width:var(--tw);display:flex;align-items:center;justify-content:center;background:#fffdf7;border:1.5px solid #3a2e22;border-radius:3px;font-size:calc(var(--tw)*.68);line-height:1;touch-action:none;cursor:grab}
+.tc.space{grid-column:14;grid-row:1/3;align-self:center}
+.tc:active{background:#ebe3d0}
+
+/* octagon / star buttons */
+.svgbtn{position:relative;border:0;background:none;cursor:pointer;container-type:size;touch-action:manipulation;color:#222;font-family:inherit}
+.svgbtn svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.svgbtn polygon{fill:#fff;stroke:#333;stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#clear polygon{fill:#f4d35e;stroke:#000}
+#clear:active polygon{fill:#e8c344}
+#clear{color:#4a3a0c}
+#go polygon{fill:#b3343a;stroke:#6a1f23}
+#go:active polygon{fill:#962a30}
+#go{color:#fbefe3}
+.svgbtn span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;padding:14%}
+#clear{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.5);flex:none}
+#allBtn{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.5);flex:none;border:1.5px solid #000;border-radius:6px;background:#fffdf7;padding:calc(var(--tw)*.06);cursor:pointer;touch-action:manipulation}
+#allBtn:active{background:#ebe3d0}
+#allBtn svg{width:100%;height:100%;display:block}
+#clear span{font-size:21cqw}
+
+/* spelling area */
+#area{position:relative;min-height:0}
+.sc{position:absolute;width:1em;height:1.5em;transition:left .22s ease,top .22s ease,font-size .22s ease,opacity .18s,transform .18s;touch-action:none;cursor:grab;--c:0}
+.sc.gone{opacity:0;transform:scale(.85)}
+.sc.ghost{position:fixed;transition:none;z-index:10;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.face{position:absolute;inset:0;background:#fffdf7;border:.025em solid #3a2e22;border-radius:.03em;display:flex;align-items:center;justify-content:center;font-size:.9em;line-height:1}
+.roll{position:absolute;left:-.09em;top:-.2em;width:1.12em;height:.2em}
+.roll::before{content:"";position:absolute;left:0;top:0;right:.05em;bottom:0;border-radius:.05em/.1em;background:linear-gradient(var(--cur-hi),var(--cur-mid) 45%,var(--cur))}
+.roll::after{content:"";position:absolute;right:0;top:0;width:.1em;height:.2em;border-radius:50%;border:.012em solid var(--cur-dk);background:repeating-radial-gradient(ellipse closest-side at 50% 50%,var(--cur) 0 9%,var(--cur-hi) 9% 20%)}
+.curtain{position:absolute;left:-.04em;top:0;width:.97em;height:calc(.12em + var(--c)*1.31em);background:var(--cur);transition:height .34s cubic-bezier(.3,1.45,.55,1)}
+.curtain.drag{transition:none}
+.pull{position:absolute;left:50%;top:100%;width:max(.5em,26px);height:max(.6em,34px);transform:translateX(-50%);touch-action:none;cursor:grab}
+.pull::before{content:"";position:absolute;left:50%;top:0;width:.03em;height:.12em;margin-left:-.015em;background:var(--cur-ring)}
+.pull b{position:absolute;left:50%;top:.1em;width:.18em;height:.18em;margin-left:-.09em;border:.03em solid var(--cur-ring);border-radius:50%;background:transparent}
+.slot{position:absolute;border:2px dashed #bbb;border-radius:3px;opacity:0;transition:left .22s ease,top .22s ease,width .22s ease,height .22s ease,opacity .15s}
+.ghost.tc{position:fixed;z-index:10;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18);background:#fff}
+
+/* stage */
+#stage{position:relative;margin:0 clamp(12px,2.5vw,32px) 14px;border:1.5px solid #333;border-radius:6px;background:linear-gradient(to bottom,#5b9fd0 0%,#b4dcf3 50%,#5d974a 50%,#a8d17c 100%);overflow:hidden}
+#go{position:absolute;left:2.5%;top:50%;transform:translateY(-50%);height:74%;max-height:116px;aspect-ratio:1}
+#go span{font-size:15cqw;padding:20%}
+#mouse{position:absolute;left:0;bottom:7%;height:38%;transition:transform .5s ease-in-out;will-change:transform}
+.flipper{height:100%}
+.flipper.flip{transform:scaleX(-1)}
+#mouse img{height:100%;width:auto;display:block}
+#mouse img.walk{animation:scurry .5s ease-in-out}
+#mouse img.chew{animation:chew .2s infinite ease-in-out}
+@keyframes scurry{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}50%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes chew{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
+#cheese{position:absolute;right:4%;bottom:6%;height:52%;width:auto;transition:opacity .4s}
+#cheese.hide{opacity:0}
+#infoBtn{position:absolute;top:8px;right:8px;z-index:3;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.22);opacity:.85;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font:italic 700 15px/1 Georgia,"Times New Roman",serif;text-shadow:0 1px 2px rgba(30,70,110,.5);touch-action:manipulation}
+#infoBtn:active{background:rgba(255,255,255,.65)}
+body.starting #app{visibility:hidden}
+#start{position:fixed;inset:0;z-index:50;cursor:pointer;touch-action:manipulation;--t:min(28vh,220px)}
+#start svg{position:absolute;left:50%;top:50%;width:calc(var(--t)*1.4);height:var(--t);transform:translate(-50%,-50%)}
+#start svg polygon{fill:#000;stroke:none}
+#start span{position:absolute;left:0;right:0;top:calc(50% + var(--t)*.4 + 34px);text-align:center;font-size:clamp(22px,4vh,34px);letter-spacing:.05em;color:#3a2e22}
+#info{position:fixed;inset:0;z-index:20;background:rgba(45,32,18,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+#info[hidden]{display:none}
+#panel{position:relative;width:min(780px,100%);max-height:100%;overflow:auto;background:#fbf6e8;border:1.5px solid #3a2e22;border-radius:8px;padding:26px 30px 22px;touch-action:pan-y}
+#panel h1{font-size:30px;font-weight:700;letter-spacing:.02em}
+#panel h2{font-size:18px;font-weight:400;font-style:italic;margin:2px 0 16px;color:#6b5a44}
+#panel .cols{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #cdbf9f;padding-top:14px}
+#panel .cols p{font-size:16px;line-height:1.6}
+#panel .cols p+p{border-left:1px solid #cdbf9f;padding-left:24px;margin-left:24px}
+#panel p[lang=ja]{word-break:auto-phrase;line-break:strict}
+body.lower .tc,body.lower .face{text-transform:lowercase}
+#panel .opt{font-size:16px;display:flex;align-items:center;gap:10px}
+#caseSw{position:relative;width:80px;height:36px;border:1.5px solid #3a2e22;border-radius:18px;background:#fffdf7;cursor:pointer;padding:0;touch-action:manipulation;font:inherit;color:#3a2e22}
+#caseSw i{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#9a3b36;transition:left .22s cubic-bezier(.3,1.4,.55,1)}
+#caseSw[aria-checked=true] i{left:47px}
+#caseSw b{position:absolute;top:0;bottom:0;width:34px;display:flex;align-items:center;justify-content:center;font-weight:400;font-size:20px;line-height:1;transition:color .2s}
+#caseSw b:first-of-type{left:0;color:#fffdf7}
+#caseSw b:last-of-type{right:0}
+#caseSw[aria-checked=true] b:first-of-type{color:#3a2e22}
+#caseSw[aria-checked=true] b:last-of-type{color:#fffdf7}
+#panel .chk input{width:20px;height:20px;accent-color:#9a3b36;margin:0}
+#panel .chk{display:flex;align-items:center;gap:8px;cursor:pointer}
+#panel .steps2{display:flex;justify-content:flex-end;margin-top:12px;font-size:16px}
+#panel .steps{flex-wrap:wrap;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid #cdbf9f;font-size:16px;display:flex;align-items:center;gap:10px}
+#panel input[type=number]{width:64px;font:inherit;font-size:16px;padding:4px 6px;border:1.5px solid #3a2e22;border-radius:4px;background:#fffdf7;color:inherit;text-align:center;-webkit-user-select:text;user-select:text;touch-action:manipulation}
+#closeInfo{position:absolute;top:8px;right:10px;width:34px;height:34px;border:0;background:none;font-size:26px;line-height:1;color:#3a2e22;cursor:pointer;touch-action:manipulation}
+@media (max-width:640px){#panel .cols{grid-template-columns:1fr}#panel .cols p+p{border-left:0;padding-left:0;margin:12px 0 0}}
+</style>
+</head>
+<body class="lower starting">
+<svg id="paper" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="3" result="f"/>
+      <feColorMatrix in="f" type="matrix" values="0 0 0 0 .42  0 0 0 0 .30  0 0 0 0 .15  0 0 0 .6 -.17" result="fine"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".006 .011" numOctaves="4" seed="8" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 .60  0 0 0 0 .42  0 0 0 0 .20  0 0 0 .8 -.26" result="blot"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".02 .5" numOctaves="2" seed="5" result="l"/>
+      <feColorMatrix in="l" type="matrix" values="0 0 0 0 .50  0 0 0 0 .36  0 0 0 0 .18  0 0 0 .45 -.14" result="fiber"/>
+      <feMerge><feMergeNode in="blot"/><feMergeNode in="fiber"/><feMergeNode in="fine"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#ecdfc2"/>
+  <rect width="100%" height="100%" filter="url(#grain)"/>
+</svg>
+<div id="vig"></div>
+<div id="app">
+  <div id="top">
+    <button id="allBtn" aria-label="All curtains"><svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--cur-hi)"/><stop offset="1" style="stop-color:var(--cur)"/></linearGradient></defs>
+      <rect x="10" y="22" width="70" height="34" style="fill:var(--cur)"/>
+      <rect x="4" y="6" width="82" height="20" rx="6" ry="10" fill="url(#rg)"/>
+      <ellipse cx="86" cy="16" rx="6" ry="10" style="fill:var(--cur-hi);stroke:var(--cur-dk)" stroke-width="1"/>
+      <ellipse cx="86" cy="16" rx="3.7" ry="6.2" style="fill:var(--cur)"/>
+      <ellipse cx="86" cy="16" rx="1.6" ry="2.7" style="fill:var(--cur-hi)"/>
+      <polygon points="50,60 66,76 57,76 57,82 66,82 50,98 34,82 43,82 43,76 34,76" fill="#c62828" stroke-linejoin="miter"/>
+    </svg></button>
+    <div id="letters"></div>
+    <button id="clear" class="svgbtn" aria-label="Clear"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="30,2 70,2 98,30 98,70 70,98 30,98 2,70 2,30"/></svg><span>Clear</span></button>
+  </div>
+  <div id="area"><div class="slot" id="slot"></div></div>
+  <div id="stage">
+    <button id="go" class="svgbtn"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon id="star"/></svg><span>Move the Mouse</span></button>
+    <div id="mouse"><div class="flipper"><img src="./images/mouse.png" alt="" draggable="false"></div></div>
+    <button id="infoBtn" aria-label="Information">i</button>
+    <img id="cheese" src="./images/cheese.png" alt="" draggable="false">
+  </div>
+</div>
+<div id="start" role="button" tabindex="0" aria-label="Play">
+  <svg viewBox="0 0 140 100" aria-hidden="true"><polygon points="24,10 24,90 116,50"/></svg>
+  <span>Mouse Game</span>
+</div>
+<div id="info" hidden>
+  <div id="panel" role="dialog" aria-modal="true">
+    <button id="closeInfo" aria-label="Close">&times;</button>
+    <h1>Mouse Game</h1>
+    <h2>How do you spell &hellip;?</h2>
+    <div class="cols">
+      <p lang="en">Drag cards to form a word. Hide the letters in the word by pulling down the curtains. Someone else guesses what letters are there. Roll up the curtains for each correct letter guessed. Move the mouse for each wrong letter guessed. If the mouse gets the cheese, it&rsquo;s game over.</p>
+      <p lang="ja">カードを動かして、単語を作ります。カーテンを下げて、文字を隠します。ほかの人が隠れた文字を当てます。当たった文字のカーテンを上げます。はずれるたびに、ネズミを動かします。ネズミがチーズを取ったら、ゲームオーバーです。</p>
+    </div>
+    <div class="steps">
+      <label>Mouse steps: <input id="stepsInput" type="number" min="1" max="25" step="1" value="7" inputmode="numeric"></label>
+      <div class="opt">Letters:
+        <button id="caseSw" role="switch" aria-checked="true" aria-label="Uppercase or lowercase"><i></i><b>A</b><b>a</b></button>
+      </div>
+      <label class="chk"><input id="tapReveal" type="checkbox" checked> Tapping letters opens curtains</label>
+    </div>
+    <div class="steps2">
+      <label class="chk"><input id="tapAdvance" type="checkbox"> Tapping letters advances mouse</label>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+let STEPS = +new URLSearchParams(location.search).get('steps') || 7;
+const AUDIO_SRC = './audio/eating.wav';
+const $ = s => document.querySelector(s);
+const area = $('#area'), top_ = $('#top'), slot = $('#slot');
+const GAP = .2;                // spacing between cards, in card widths
+let letters = [];              // {ch, down, el}
+let curGap = -1;
+
+/* ---------- disable zoom / selection / context menu ---------- */
+['contextmenu','selectstart','dragstart','gesturestart','gesturechange','dblclick'].forEach(t =>
+  document.addEventListener(t, e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); }, {passive:false}));
+document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, {passive:false});
+document.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
+document.addEventListener('touchmove', e => { if (!e.target.closest('#panel')) e.preventDefault(); }, {passive:false});
+
+/* ---------- star button shape ---------- */
+$('#star').setAttribute('points', Array.from({length:16}, (_, k) => {
+  const a = k * Math.PI / 8 - Math.PI / 2, r = k % 2 ? 38 : 49;
+  return (50 + r * Math.cos(a)).toFixed(1) + ',' + (50 + r * Math.sin(a)).toFixed(1);
+}).join(' '));
+
+/* ---------- top letter cards ---------- */
+const lettersEl = $('#letters');
+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch => {
+  const d = document.createElement('div');
+  d.className = 'tc'; d.textContent = ch;
+  d.addEventListener('pointerdown', e => startPending(e, {kind:'top', ch, el:d}));
+  lettersEl.appendChild(d);
+});
+
+/* space card */
+{
+  const sp = document.createElement('div');
+  sp.className = 'tc space'; sp.setAttribute('aria-label', 'Space');
+  sp.addEventListener('pointerdown', e => startPending(e, {kind:'top', ch:' ', el:sp}));
+  lettersEl.appendChild(sp);
+}
+
+/* ---------- spelling area layout ---------- */
+function metrics(n) {
+  const ar = area.getBoundingClientRect();
+  const maxFs = Math.min(130, ar.height / 2.4);
+  const fs = Math.max(18, Math.min(maxFs, ar.width * .92 / (n + (n - 1) * GAP)));
+  const total = fs * (n + (n - 1) * GAP);
+  return {fs, x0: (ar.width - total) / 2, step: fs * (1 + GAP), top: (ar.height - fs * 2.35) / 2 + fs * .2};
+}
+function layout(gapIdx = -1) {
+  const n = letters.length + (gapIdx >= 0 ? 1 : 0);
+  if (!n) { slot.style.opacity = 0; return; }
+  const m = metrics(n);
+  let k = 0;
+  letters.forEach((L, i) => {
+    if (i === gapIdx) k++;
+    const s = L.el.style;
+    s.fontSize = m.fs + 'px'; s.left = (m.x0 + k * m.step) + 'px'; s.top = m.top + 'px';
+    k++;
+  });
+  if (gapIdx >= 0) {
+    Object.assign(slot.style, {left:(m.x0 + gapIdx * m.step) + 'px', top:m.top + 'px', width:m.fs + 'px', height:(m.fs * 1.5) + 'px', opacity:1});
+  } else slot.style.opacity = 0;
+}
+function indexFor(px) {
+  const n = letters.length; if (!n) return 0;
+  const m = metrics(n); let idx = 0;
+  for (let k = 0; k < n; k++) if (m.x0 + k * m.step + m.fs / 2 < px) idx++;
+  return idx;
+}
+window.addEventListener('resize', () => { layout(curGap); placeMouse(false); });
+
+/* ---------- spelling cards ---------- */
+function buildCard(L) {
+  const el = document.createElement('div');
+  el.className = 'sc';
+  el.style.setProperty('--c', L.down ? 1 : 0);
+  el.innerHTML = '<div class="face"></div><div class="roll"></div><div class="curtain"><div class="pull"><b></b></div></div>';
+  el.firstChild.textContent = L.ch;
+  L.el = el;
+  el.addEventListener('pointerdown', e => {
+    if (e.target.closest('.pull')) return;
+    startPending(e, {kind:'area', L, el});
+  });
+  const pull = el.querySelector('.pull'), cur = el.querySelector('.curtain');
+  pull.addEventListener('pointerdown', e => {
+    if (lock !== null) return;
+    lock = e.pointerId; e.stopPropagation();
+    pull.setPointerCapture(e.pointerId);
+    const fs = parseFloat(el.style.fontSize), y0 = e.clientY, c0 = L.down ? 1 : 0;
+    let c = c0, moved = 0;
+    cur.classList.add('drag');
+    const mv = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      moved = Math.max(moved, Math.abs(ev.clientY - y0));
+      c = Math.min(1, Math.max(0, c0 + (ev.clientY - y0) / (1.31 * fs)));
+      el.style.setProperty('--c', c);
+    };
+    const up = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      pull.removeEventListener('pointermove', mv); pull.removeEventListener('pointerup', up); pull.removeEventListener('pointercancel', up);
+      cur.classList.remove('drag'); lock = null;
+      if (moved < 6) { if (L.down) L.down = false; }
+      else L.down = c > .5;
+      el.style.setProperty('--c', L.down ? 1 : 0);
+    };
+    pull.addEventListener('pointermove', mv); pull.addEventListener('pointerup', up); pull.addEventListener('pointercancel', up);
+  });
+  return el;
+}
+function insertLetter(L, idx, cx, cy, fsv) {
+  letters.splice(idx, 0, L);
+  const el = L.el || buildCard(L);
+  const ar = area.getBoundingClientRect();
+  el.style.transition = 'none';
+  el.style.fontSize = fsv + 'px';
+  el.style.left = (cx - ar.left - fsv / 2) + 'px';
+  el.style.top = (cy - ar.top - fsv * .75) + 'px';
+  area.appendChild(el);
+  el.offsetWidth;
+  el.style.transition = '';
+  curGap = -1; layout(-1);
+}
+
+/* ---------- drag handling (single pointer) ---------- */
+let lock = null, pending = null, drag = null;
+function startPending(e, info) {
+  if (lock !== null) return;
+  lock = e.pointerId;
+  pending = Object.assign({id:e.pointerId, x0:e.clientX, y0:e.clientY}, info);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
+}
+function zoneOf(y) {
+  const tr = top_.getBoundingClientRect(), ar = area.getBoundingClientRect();
+  if (y <= tr.bottom) return 'top';
+  if (y >= ar.top && y <= ar.bottom) return 'area';
+  return 'other';
+}
+function beginDrag() {
+  const p = pending;
+  drag = {kind:p.kind, L:p.L, ch:p.ch, scale:1, gw:0, gh:0, x:p.x0, y:p.y0};
+  if (p.kind === 'top') {
+    const g = document.createElement('div');
+    g.className = 'tc ghost'; g.textContent = p.ch;
+    const ref = p.ch === ' ' ? lettersEl.firstElementChild : p.el;
+    drag.tw = ref.offsetWidth; drag.th = ref.offsetHeight;
+    g.style.width = drag.tw + 'px'; g.style.fontSize = getComputedStyle(ref).fontSize;
+    drag.ghost = g;
+  } else {
+    const L = p.L, fs = parseFloat(p.el.style.fontSize);
+    drag.fs = fs; drag.orig = letters.indexOf(L);
+    const g = p.el.cloneNode(true);
+    g.classList.add('ghost'); g.style.fontSize = fs + 'px';
+    drag.ghost = g;
+    letters.splice(drag.orig, 1);
+    p.el.remove();
+    layout(-1);
+  }
+  document.body.appendChild(drag.ghost);
+}
+function onMove(e) {
+  if (e.pointerId !== pending.id) return;
+  if (!drag) {
+    if (Math.hypot(e.clientX - pending.x0, e.clientY - pending.y0) < 6) return;
+    beginDrag();
+  }
+  const x = e.clientX, y = e.clientY, ar = area.getBoundingClientRect();
+  const zone = zoneOf(y);
+  const d = zone === 'area' ? 0 : (y < ar.top ? ar.top - y : y - ar.bottom);
+  const c = 1 - Math.min(1, d / 260);
+  const g = drag.ghost;
+  if (drag.kind === 'top') {
+    const target = metrics(letters.length + 1).fs;
+    drag.gw = drag.tw; drag.gh = drag.th + (drag.tw * 1.5 - drag.th) * c;
+    drag.scale = 1 + (target / drag.tw - 1) * c;
+    g.style.width = drag.gw + 'px'; g.style.height = drag.gh + 'px';
+  } else {
+    drag.gw = drag.fs; drag.gh = drag.fs * 1.5;
+    drag.scale = .5 + .5 * c;
+  }
+  g.style.left = (x - drag.gw / 2) + 'px'; g.style.top = (y - drag.gh / 2) + 'px';
+  g.style.transform = 'scale(' + drag.scale + ')';
+  g.style.opacity = zone === 'top' && drag.kind === 'area' ? .6 : 1;
+  drag.x = x; drag.y = y; drag.zone = zone;
+  if (zone === 'area') {
+    const idx = indexFor(x - ar.left);
+    if (idx !== curGap) { curGap = idx; layout(curGap); }
+  } else if (curGap !== -1) { curGap = -1; layout(-1); }
+}
+function onUp(e) {
+  if (e.pointerId !== pending.id) return;
+  window.removeEventListener('pointermove', onMove);
+  window.removeEventListener('pointerup', onUp);
+  window.removeEventListener('pointercancel', onUp);
+  const d = drag, cancelled = e.type === 'pointercancel', p = pending;
+  pending = null; drag = null; lock = null;
+  if (!d) {
+    if (!cancelled && p.kind === 'top') {
+      if (letters.some(L => L.ch === p.ch)) {
+        if ($('#tapReveal').checked) letters.forEach(L => { if (L.ch === p.ch && L.down) setCurtain(L, false); });
+      } else if ($('#tapAdvance').checked && p.ch !== ' ' && letters.length) stepMouse();
+    }
+    return;
+  }
+  d.ghost.remove();
+  const fsv = (d.kind === 'top' ? d.gw : d.fs) * d.scale;
+  if (d.kind === 'top') {
+    if (!cancelled && d.zone === 'area') insertLetter({ch:d.ch, down:false}, curGap < 0 ? letters.length : curGap, d.x, d.y, fsv);
+  } else {
+    if (!cancelled && d.zone === 'top') { curGap = -1; layout(-1); }       // removed
+    else if (!cancelled && d.zone === 'area') insertLetter(d.L, curGap < 0 ? letters.length : curGap, d.x, d.y, fsv);
+    else insertLetter(d.L, Math.min(d.orig, letters.length), d.x, d.y, fsv);
+  }
+  curGap = -1; layout(-1);
+}
+
+/* ---------- curtains ---------- */
+function setCurtain(L, down) { L.down = down; L.el.style.setProperty('--c', down ? 1 : 0); }
+/* easter egg: five quick taps on an empty play space change the curtain color */
+let eggTaps = 0, eggTimer = 0, eggIdx = 0;
+const EGG_HUES = [215, 145, 275, 38, 3];
+function eggTap() {
+  if (letters.length) { eggTaps = 0; return; }
+  clearTimeout(eggTimer);
+  eggTimer = setTimeout(() => { eggTaps = 0; }, 1200);
+  if (++eggTaps < 5) return;
+  eggTaps = 0;
+  const h = EGG_HUES[eggIdx++ % EGG_HUES.length], st = document.documentElement.style;
+  st.setProperty('--cur', `hsl(${h},44%,40%)`);
+  st.setProperty('--cur-hi', `hsl(${h},48%,62%)`);
+  st.setProperty('--cur-mid', `hsl(${h},46%,51%)`);
+  st.setProperty('--cur-dk', `hsl(${h},44%,28%)`);
+  st.setProperty('--cur-ring', `hsl(${h},44%,22%)`);
+}
+$('#allBtn').addEventListener('click', () => {
+  if (!letters.length) { eggTap(); return; }
+  eggTaps = 0;
+  const down = !letters.every(L => L.down);   // all down -> raise; otherwise lower
+  letters.forEach((L, i) => setTimeout(() => { if (letters.includes(L)) setCurtain(L, down); }, i * 30));
+});
+
+/* ---------- clear ---------- */
+$('#clear').addEventListener('click', () => {
+  letters.forEach(L => { const el = L.el; el.classList.add('gone'); setTimeout(() => el.remove(), 200); });
+  letters = []; layout(-1);
+});
+
+/* ---------- mouse and cheese ---------- */
+const mouse = $('#mouse'), flipper = mouse.firstElementChild, mimg = mouse.querySelector('img');
+const cheese = $('#cheese'), go = $('#go'), stage = $('#stage');
+const audio = new Audio(AUDIO_SRC); audio.preload = 'auto';
+let k = 0, state = 'idle', raf = 0, eatQ = 0, timers = [];
+const startX = () => go.offsetLeft + go.offsetWidth + 20;
+const endX = () => cheese.offsetLeft + cheese.offsetWidth * .08 - mouse.offsetWidth;
+function xFor(step) {
+  // steps 1..N-1 are spread evenly up to a point just short of the cheese; the last step closes the gap
+  if (step >= STEPS) return endX();
+  const close = endX() - mouse.offsetWidth * .1;
+  return startX() + (close - startX()) * step / Math.max(1, STEPS - 1);
+}
+function placeMouse(animate, x) {
+  if (!animate) mouse.style.transition = 'none';
+  mouse.style.transform = 'translateX(' + (x !== undefined ? x : xFor(k) + (state === 'eating' || state === 'eaten' ? eatQ * cheese.offsetWidth * .85 : 0)) + 'px)';
+  if (!animate) { mouse.offsetWidth; mouse.style.transition = ''; }
+}
+mimg.addEventListener('load', () => placeMouse(false));
+cheese.addEventListener('load', () => placeMouse(false));
+const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+
+function stepMouse() {
+  if (state !== 'idle') return;
+  k++; placeMouse(true);
+  mimg.classList.remove('walk'); mimg.offsetWidth; mimg.classList.add('walk');
+  if (k >= STEPS) { state = 'walking'; later(eat, 560); }
+}
+go.addEventListener('click', () => {
+  if (state === 'idle') stepMouse();
+  else if (state !== 'returning') reset();
+});
+function eat() {
+  state = 'eating';
+  mouse.style.transition = 'none';
+  mimg.classList.remove('walk'); mimg.classList.add('chew');
+  try { audio.currentTime = 0; audio.play().catch(() => {}); } catch (_) {}
+  const run = () => {
+    const dur = (isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 3) * 1000, B = 10, t0 = performance.now();
+    const frame = now => {
+      const p = Math.min(1, (now - t0) / dur), f = (p * B) % 1;
+      const q = p >= 1 ? 1 : (Math.floor(p * B) + Math.min(1, f / .35)) / B;
+      eatQ = q;
+      const X = q * 100, a = q > 0 ? 5 : 0;
+      cheese.style.clipPath = 'polygon(' + [0,1,2,3,4,5].map(i => Math.min(100, X + (i % 2 ? a : 0)).toFixed(1) + '% ' + (i * 20) + '%').join(',') + ',100% 100%,100% 0)';
+      placeMouse(false);
+      if (p < 1) raf = requestAnimationFrame(frame);
+      else { state = 'eaten'; cheese.classList.add('hide'); mimg.classList.remove('chew'); }
+    };
+    raf = requestAnimationFrame(frame);
+  };
+  run();
+}
+function reset() {
+  cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers = [];
+  try { audio.pause(); audio.currentTime = 0; } catch (_) {}
+  state = 'returning'; k = 0; eatQ = 0;
+  mimg.classList.remove('chew', 'walk');
+  cheese.style.clipPath = ''; cheese.classList.remove('hide');
+  mouse.style.transition = 'transform .8s ease-in-out';
+  flipper.classList.add('flip');
+  mimg.classList.add('walk');
+  mouse.style.transform = 'translateX(' + startX() + 'px)';
+  later(() => { flipper.classList.remove('flip'); mimg.classList.remove('walk'); mouse.style.transition = ''; state = 'idle'; }, 850);
+}
+
+/* ---------- info overlay ---------- */
+const info = $('#info'), stepsInput = $('#stepsInput');
+stepsInput.value = STEPS;
+$('#infoBtn').addEventListener('click', () => { info.hidden = false; });
+$('#closeInfo').addEventListener('click', () => { info.hidden = true; });
+info.addEventListener('pointerdown', e => { if (e.target === info) info.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') info.hidden = true; });
+$('#caseSw').addEventListener('click', e => {
+  const on = e.currentTarget.getAttribute('aria-checked') !== 'true';
+  e.currentTarget.setAttribute('aria-checked', on);
+  document.body.classList.toggle('lower', on);
+});
+stepsInput.addEventListener('change', () => {
+  const v = Math.max(1, Math.min(25, Math.round(+stepsInput.value) || STEPS));
+  stepsInput.value = v;
+  if (v !== STEPS) { STEPS = v; if (k > 0 || state !== 'idle') reset(); }
+});
+
+/* ---------- start screen ---------- */
+const startEl = $('#start');
+const startSnd = new Audio('./audio/start.wav'); startSnd.preload = 'auto';
+function begin() {
+  if (!startEl.isConnected) return;
+  startEl.remove();
+  document.body.classList.remove('starting');
+  try { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); } catch (_) {}
+  try { startSnd.currentTime = 0; startSnd.play().catch(() => {}); } catch (_) {}
+  layout(-1); placeMouse(false);
+}
+startEl.addEventListener('click', begin);
+startEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') begin(); });
+
+layout(-1);
+placeMouse(false);
+})();
+</script>
+</body>
+</html>
