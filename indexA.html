@@ -14,7 +14,7 @@ img{pointer-events:none;-webkit-user-drag:none}
 #paper{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 #vig{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 45%,rgba(255,248,225,.35) 0%,rgba(255,248,225,0) 55%,rgba(120,85,40,.22) 100%)}
 #app{position:relative;z-index:1;height:100dvh;display:grid;grid-template-rows:auto 1fr minmax(150px,26vh)}
-#app{--tw:min(4.9vw,8.2vh,66px)}
+#app{--tw:min(4.4vw,8.2vh,66px)}
 
 /* top letters */
 #top{display:flex;justify-content:center;align-items:center;gap:calc(var(--tw)*.35);padding:12px 12px 8px}
@@ -35,9 +35,9 @@ img{pointer-events:none;-webkit-user-drag:none}
 #go{color:#fbefe3}
 .svgbtn span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;padding:14%}
 #clear{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.5);flex:none}
-#allBtn{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.5);flex:none;border:1.5px solid #000;border-radius:6px;background:#fffdf7;padding:calc(var(--tw)*.06);cursor:pointer;touch-action:manipulation}
-#allBtn:active{background:#ebe3d0}
-#allBtn svg{width:100%;height:100%;display:block}
+#allBtn,#vocabBtn{width:calc(var(--tw)*1.5);height:calc(var(--tw)*1.5);flex:none;border:1.5px solid #000;border-radius:6px;background:#fffdf7;padding:calc(var(--tw)*.06);cursor:pointer;touch-action:manipulation}
+#allBtn:active,#vocabBtn:active{background:#ebe3d0}
+#allBtn svg,#vocabBtn svg{width:100%;height:100%;display:block}
 #clear span{font-size:21cqw}
 
 /* spelling area */
@@ -104,6 +104,18 @@ body.lower .tc,body.lower .face{text-transform:lowercase}
 #panel input[type=number]{width:64px;font:inherit;font-size:16px;padding:4px 6px;border:1.5px solid #3a2e22;border-radius:4px;background:#fffdf7;color:inherit;text-align:center;-webkit-user-select:text;user-select:text;touch-action:manipulation}
 #closeInfo{position:absolute;top:8px;right:10px;width:34px;height:34px;border:0;background:none;font-size:26px;line-height:1;color:#3a2e22;cursor:pointer;touch-action:manipulation}
 @media (max-width:640px){#panel .cols{grid-template-columns:1fr}#panel .cols p+p{border-left:0;padding-left:0;margin:12px 0 0}}
+#vocabBtn{margin-right:calc(var(--tw)*.2)}
+#drawer{position:fixed;z-index:8;border:4px solid #2e1a0b;border-top:0;background:#a8794a;overflow:hidden;visibility:hidden;transform:translateY(-100%);transition:transform .42s cubic-bezier(.2,.9,.3,1),visibility 0s .42s}
+#drawer.open{visibility:visible;transform:none;transition:transform .42s cubic-bezier(.2,.9,.3,1),visibility 0s}
+#drawer .wood{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#drawerScroll{position:absolute;inset:6px;top:calc(var(--dtop,0px) + 10px);border:2px solid #4a2c12;background:rgba(28,14,4,.42);overflow-x:auto;overflow-y:hidden;touch-action:pan-x;scrollbar-width:thin;scrollbar-color:#9a6a38 rgba(0,0,0,.25);box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+#vocab{display:flex;gap:10px;height:100%;padding:6px 8px;width:max-content}
+.vc{flex:none;width:calc(var(--dh,120px)*.85);display:flex;flex-direction:column;background:#fffdf7;border:1.5px solid #3a2e22;border-radius:3px;padding:4px 4px 2px;touch-action:pan-x;cursor:grab}
+.vc img{flex:1;min-height:0;width:100%;object-fit:contain;display:block}
+.vl{flex:none;text-align:center;font-size:calc(var(--dh,120px)*.09);line-height:1.3;white-space:nowrap;overflow:hidden;text-transform:uppercase;color:#2a2118}
+.vl.long{font-size:calc(var(--dh,120px)*.075)}
+body.lower .vl{text-transform:lowercase}
+.vc.ghost{position:fixed;z-index:10;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:none}
 </style>
 </head>
 <body class="starting">
@@ -125,6 +137,13 @@ body.lower .tc,body.lower .face{text-transform:lowercase}
 <div id="vig"></div>
 <div id="app">
   <div id="top">
+    <button id="vocabBtn" aria-label="Vocabulary drawer" aria-expanded="false"><svg viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="22" y="8" width="26" height="34" fill="#fffdf7" stroke="#3a2e22" stroke-width="2" transform="rotate(-6 35 25)"/>
+      <rect x="50" y="6" width="26" height="34" fill="#fffdf7" stroke="#3a2e22" stroke-width="2" transform="rotate(5 63 23)"/>
+      <rect x="8" y="38" width="84" height="54" fill="#b4834f" stroke="#2e1a0b" stroke-width="4"/>
+      <rect x="16" y="46" width="68" height="38" fill="none" stroke="#6d4724" stroke-width="2.5"/>
+      <rect x="38" y="60" width="24" height="9" fill="#2e1a0b"/>
+    </svg></button>
     <button id="allBtn" aria-label="All curtains"><svg viewBox="0 0 100 100" aria-hidden="true">
       <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--cur-hi)"/><stop offset="1" style="stop-color:var(--cur)"/></linearGradient></defs>
       <rect x="10" y="22" width="70" height="34" style="fill:var(--cur)"/>
@@ -144,6 +163,18 @@ body.lower .tc,body.lower .face{text-transform:lowercase}
     <button id="infoBtn" aria-label="Information">i</button>
     <img id="cheese" src="./images/cheese.png" alt="" draggable="false">
   </div>
+</div>
+<div id="drawer" aria-hidden="true">
+  <svg class="wood" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <filter id="woodf" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency=".005 .14" numOctaves="3" seed="11" result="n"/>
+        <feColorMatrix in="n" type="matrix" values=".7 0 0 0 .24  .5 0 0 0 .13  .26 0 0 0 .05  0 0 0 0 1"/>
+      </filter>
+    </defs>
+    <rect width="100%" height="100%" filter="url(#woodf)"/>
+  </svg>
+  <div id="drawerScroll"><div id="vocab"></div></div>
 </div>
 <div id="start" role="button" tabindex="0" aria-label="Play">
   <svg viewBox="0 0 140 100" aria-hidden="true"><polygon points="24,10 24,90 116,50"/></svg>
@@ -187,7 +218,7 @@ let curGap = -1;
   document.addEventListener(t, e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); }, {passive:false}));
 document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, {passive:false});
 document.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && ['+','-','=','0'].includes(e.key)) e.preventDefault(); });
-document.addEventListener('touchmove', e => { if (!e.target.closest('#panel')) e.preventDefault(); }, {passive:false});
+document.addEventListener('touchmove', e => { if (drag || !e.target.closest('#panel, #drawerScroll')) e.preventDefault(); }, {passive:false});
 
 /* ---------- star button shape ---------- */
 $('#star').setAttribute('points', Array.from({length:16}, (_, k) => {
@@ -300,7 +331,7 @@ let lock = null, pending = null, drag = null;
 function startPending(e, info) {
   if (lock !== null) return;
   lock = e.pointerId;
-  pending = Object.assign({id:e.pointerId, x0:e.clientX, y0:e.clientY}, info);
+  pending = Object.assign({id:e.pointerId, x0:e.clientX, y0:e.clientY, ptype:e.pointerType}, info);
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
@@ -321,6 +352,13 @@ function beginDrag() {
     drag.tw = ref.offsetWidth; drag.th = ref.offsetHeight;
     g.style.width = drag.tw + 'px'; g.style.fontSize = getComputedStyle(ref).fontSize;
     drag.ghost = g;
+  } else if (p.kind === 'vocab') {
+    const g = p.el.cloneNode(true);
+    g.classList.add('ghost');
+    drag.vw = p.el.offsetWidth; drag.vh = p.el.offsetHeight; drag.chars = p.chars;
+    g.style.width = drag.vw + 'px'; g.style.height = drag.vh + 'px';
+    g.style.setProperty('--dh', getComputedStyle(p.el).getPropertyValue('--dh') || $('#drawer').style.getPropertyValue('--dh'));
+    drag.ghost = g;
   } else {
     const L = p.L, fs = parseFloat(p.el.style.fontSize);
     drag.fs = fs; drag.orig = letters.indexOf(L);
@@ -336,8 +374,16 @@ function beginDrag() {
 function onMove(e) {
   if (e.pointerId !== pending.id) return;
   if (!drag) {
-    if (Math.hypot(e.clientX - pending.x0, e.clientY - pending.y0) < 6) return;
-    beginDrag();
+    const dx = e.clientX - pending.x0, dy = e.clientY - pending.y0;
+    if (pending.kind === 'vocab') {
+      if (pending.scrolling || (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy) && e.pointerType !== 'touch')) {
+        pending.scrolling = true; $('#drawerScroll').scrollLeft = pending.scroll0 - dx; return;
+      }
+      if (dy > 8 && dy > Math.abs(dx)) beginDrag(); else return;
+    } else {
+      if (Math.hypot(dx, dy) < 6) return;
+      beginDrag();
+    }
   }
   const x = e.clientX, y = e.clientY, ar = area.getBoundingClientRect();
   const zone = zoneOf(y);
@@ -349,6 +395,8 @@ function onMove(e) {
     drag.gw = drag.tw; drag.gh = drag.th + (drag.tw * 1.5 - drag.th) * c;
     drag.scale = 1 + (target / drag.tw - 1) * c;
     g.style.width = drag.gw + 'px'; g.style.height = drag.gh + 'px';
+  } else if (drag.kind === 'vocab') {
+    drag.gw = drag.vw; drag.gh = drag.vh; drag.scale = 1 + .3 * c;
   } else {
     drag.gw = drag.fs; drag.gh = drag.fs * 1.5;
     drag.scale = .5 + .5 * c;
@@ -357,7 +405,7 @@ function onMove(e) {
   g.style.transform = 'scale(' + drag.scale + ')';
   g.style.opacity = zone === 'top' && drag.kind === 'area' ? .6 : 1;
   drag.x = x; drag.y = y; drag.zone = zone;
-  if (zone === 'area') {
+  if (zone === 'area' && drag.kind !== 'vocab') {
     const idx = indexFor(x - ar.left);
     if (idx !== curGap) { curGap = idx; layout(curGap); }
   } else if (curGap !== -1) { curGap = -1; layout(-1); }
@@ -378,6 +426,11 @@ function onUp(e) {
     return;
   }
   d.ghost.remove();
+  if (d.kind === 'vocab') {
+    if (!cancelled && d.zone === 'area') setWord(d.chars, d.x, d.y);
+    curGap = -1; layout(-1);
+    return;
+  }
   const fsv = (d.kind === 'top' ? d.gw : d.fs) * d.scale;
   if (d.kind === 'top') {
     if (!cancelled && d.zone === 'area') insertLetter({ch:d.ch, down:false}, curGap < 0 ? letters.length : curGap, d.x, d.y, fsv);
@@ -503,6 +556,53 @@ stepsInput.addEventListener('change', () => {
   stepsInput.value = v;
   if (v !== STEPS) { STEPS = v; if (k > 0 || state !== 'idle') reset(); }
 });
+
+/* ---------- vocabulary drawer ---------- */
+const VOCAB_FILES = ['banana','baseball','basketball','black','blue','brown','cake','carrot','cucumber','egg','emily','grapes','green pepper','green','hamburger','jam','juice','kiwi fruit','lemon','melon','milk','noodles','onion','orange(color)','orange','peach','pineapple','pink','pizza','pudding','purple','red','rice ball','robert','salad','sayo','soccer','spaghetti','steak','strawberry','sushi','swimming','table tennis','takeru','tomato','volleyball','yellow'];
+const drawer = $('#drawer'), scroller = $('#drawerScroll'), vocabEl = $('#vocab'), vocabBtn = $('#vocabBtn');
+VOCAB_FILES.forEach(f => {
+  const word = f.replace('(color)', '');
+  const card = document.createElement('div'); card.className = 'vc';
+  const img = document.createElement('img');
+  img.src = './images/' + encodeURIComponent(f) + '.png'; img.alt = word; img.draggable = false;
+  const lab = document.createElement('div'); lab.className = 'vl' + (word.length > 9 ? ' long' : ''); lab.textContent = word;
+  card.append(img, lab);
+  card.addEventListener('pointerdown', e => startPending(e, {kind:'vocab', chars:word.toUpperCase().split(''), el:card, scroll0:scroller.scrollLeft}));
+  vocabEl.appendChild(card);
+});
+scroller.addEventListener('wheel', e => {
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { scroller.scrollLeft += e.deltaY; e.preventDefault(); }
+}, {passive:false});
+function placeDrawer() {
+  const r = lettersEl.getBoundingClientRect();
+  Object.assign(drawer.style, {left:r.left + 'px', top:'0px', width:r.width + 'px', height:r.bottom + 'px'});
+  drawer.style.setProperty('--dh', r.height + 'px');
+  drawer.style.setProperty('--dtop', r.top + 'px');
+}
+vocabBtn.addEventListener('click', () => {
+  placeDrawer();
+  const open = !drawer.classList.contains('open');
+  drawer.classList.toggle('open', open);
+  drawer.setAttribute('aria-hidden', !open);
+  vocabBtn.setAttribute('aria-expanded', open);
+});
+window.addEventListener('resize', placeDrawer);
+function setWord(chars, cx, cy) {
+  letters.forEach(L => { const el = L.el; el.classList.add('gone'); setTimeout(() => el.remove(), 200); });
+  letters = [];
+  const ar = area.getBoundingClientRect();
+  chars.forEach(ch => {
+    const L = {ch, down:false}, el = buildCard(L);
+    el.style.transition = 'none';
+    el.style.fontSize = '20px';
+    el.style.left = (cx - ar.left - 10) + 'px'; el.style.top = (cy - ar.top - 15) + 'px';
+    area.appendChild(el); letters.push(L);
+  });
+  area.offsetWidth;
+  letters.forEach(L => { L.el.style.transition = ''; });
+  curGap = -1; layout(-1);
+}
+placeDrawer();
 
 /* ---------- start screen ---------- */
 const startEl = $('#start');
